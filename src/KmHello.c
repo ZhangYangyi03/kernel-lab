@@ -6,8 +6,10 @@
  * 一个非 PnP 的控制设备驱动，是"我能不能进内核"这个问题最短的一条验证路径：
  * 少到没有硬件、没有 PnP、没有电源管理要处理，出了错也只有一处。
  *
- * 编译：src\build.ps1（需要 VS Build Tools + WDK）。本文件没有在本机编译过 ——
- * 本机没有工具链，README 里写了这句实话。
+ * 编译：src\build.ps1（需要 VS Build Tools + WDK）。
+ * 本机没有 MSVC，所以这个 .sys 还没有被真编译过。但本文件不是"没人看过"：
+ * tools\stubcheck 用一份照 WDK 10.0.26100 抄的存根做了 -Wall -Wextra 的类型检查，
+ * 通过。缺什么、试过哪些路、为什么都断了，见 docs\toolchain-dead-ends.md。
  */
 
 #include <ntddk.h>
