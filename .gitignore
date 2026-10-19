@@ -1,0 +1,16 @@
+out/
+vendor/
+*.log
+*.obj
+*.o
+*.exe
+*.sys
+*.pdb
+*.ilk
+
+__pycache__/
+*.pyc
+bin/
+*.sys
+*.obj
+*.pdb
