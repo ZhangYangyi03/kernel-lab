@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  control-plane:
+    # l0ctl.py only means anything on Windows: it is a measurement of what a
+    # stock Windows install allows without a driver.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: l0ctl runs and reports, rather than raises
+        run: |
+          python control/l0ctl.py > out.json
+          python -c "import json; d=json.load(open('out.json')); assert 'process_reach' in d and 'privileges' in d; print('services', d['services'], 'drivers', d['drivers'])"
+
+  source-checks:
+    # The driver itself cannot be built without MSVC + WDK, but the source can
+    # still be parsed: the stubcheck harness type-checks it against mirrored
+    # WDK declarations. This half is what stops the repo from carrying source
+    # no compiler has ever seen.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Powershell syntax of every script in the repo
+        shell: pwsh
+        run: |
+          $bad = 0
+          Get-ChildItem -Recurse -Include *.ps1 | ForEach-Object {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { Write-Host "FAIL $($_.Name): $($errors[0].Message)"; $bad++ }
+          }
+          if ($bad -gt 0) { exit 1 }
+          Write-Host "all .ps1 files parse"
