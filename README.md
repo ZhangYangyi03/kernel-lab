@@ -88,6 +88,29 @@ ntoskrnl.lib、wdfldr.lib、KMDF 的 targets，400 MB 里这些都在。
 所以 src\build.ps1 现在跑不了，缺的不是 WDK 而是 MSVC。补上的方法见
 docs\kernel-debug-in-vm.md（在虚拟机里装 Build Tools）。
 
+
+## 现在就能跑的另一半：control\l0ctl.py（不用驱动）
+
+这台机器上大部分"驱动才能做的事"，其实在用户态就已经能测出边界了。
+`control/l0ctl.py` 把那条边界逐条量出来，每一次拒绝都连同 Win32 码一起返回
+——拒绝是数据，不是要藏起来的异常。
+
+    python control\l0ctl.py
+
+实测输出（2026-10-19，本机，Medium 完整性级别，非管理员）：
+
+    进程可达性   386 个进程：182 个可读可写，202 个被内核拒绝，2 个已消失
+                 被拒的都是 PPL / 受保护进程（System、lsass、csrss、winlogon…）
+    服务与驱动   771 个服务、443 个驱动可枚举
+    内核安全组件 360AntiHijack / 360Box64 / 360FsFlt / AMDRyzenMasterDriver / WdFilter
+    受保护文件   SAM / SYSTEM / SECURITY 连 stat 都拒绝（errno 5）；
+                 hosts 可读不可写；drivers\ 可读不可写
+    无提权停服务  sc stop 被拒，exit 5（拒绝访问）
+    特权         当前令牌 5 个特权，只有 SeChangeNotifyPrivilege 是开着的
+
+它和驱动的关系：驱动不改变"能做什么"，驱动只是把这条线往上推一格。
+推之前得先知道线在哪 —— 这就是这个文件的作用。
+
 ## 关于风险，说清楚
 
 - 开关测试签名 + 关安全启动，会让这台机器更容易被 rootkit 感染。这是真的代价。
